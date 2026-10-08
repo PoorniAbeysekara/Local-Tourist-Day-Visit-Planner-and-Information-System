@@ -13,7 +13,7 @@ export default function Browse() {
   const [openNow, setOpenNow] = useState(false);
 
   useEffect(() => {
-    api('/categories').then(setCategories).catch(() => {});
+    api('/categories').then(setCategories).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -35,9 +35,9 @@ export default function Browse() {
   return (
     <>
       <section className="hero">
-        <h1>Discover Baddegama &amp; beyond</h1>
-        <p>Browse places within 25 km, filter them, and build a one-day itinerary.</p>
-        <input className="search" type="search" placeholder="Search places by name or category" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search places" />
+        <h1>Experience the Hidden Gems of Baddegama to Galle Area</h1>
+        <p>Your ultimate local guide to plan the perfect day trip. Discover temples, nature trails, and historical landmarks within 25 km.</p>
+        <input className="search" type="search" placeholder="Search for places, activities, or categories..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search places" />
         <div className="filters">
           <button className={`pill ${category === 'all' ? 'on' : ''}`} onClick={() => setCategory('all')}>All</button>
           {categories.map((c) => (

@@ -6,7 +6,10 @@ export default function Navbar() {
   return (
     <header className="nav">
       <div className="nav-inner">
-        <Link to="/" className="brand">Baddegama Explorer</Link>
+        <Link to="/" className="brand">
+          <img src="/logo.jpg" alt="Logo" style={{ height: '48px', width: '48px', borderRadius: '12px', objectFit: 'cover' }} />
+          Local Tourist Day-Visit Planner
+        </Link>
         <nav>
           <NavLink to="/" end>Browse</NavLink>
           <NavLink to="/map">Map</NavLink>
