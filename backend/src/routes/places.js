@@ -7,8 +7,8 @@ const router = Router();
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const EDITABLE = [
-  'name', 'description', 'categories', 'location', 'distanceKm', 'entranceFee', 'open24h',
-  'openingHours', 'visitDuration', 'travelTips', 'facilities', 'contact', 'photos',
+  'name', 'description', 'categories', 'location', 'distanceKm', 'fees', 'open24h',
+  'closedOnPublicHolidays', 'openingHours', 'visitDuration', 'travelTips', 'facilities', 'contact', 'photos',
   'status', 'isTempClosed', 'notices',
 ];
 const pick = (body) => Object.fromEntries(EDITABLE.filter((k) => k in body).map((k) => [k, body[k]]));
@@ -30,7 +30,10 @@ router.get('/', optionalAuth, async (req, res, next) => {
     if (!(includeInactive === 'true' && req.admin)) filter.status = 'active';
     if (category && category !== 'all') filter.categories = String(category);
     if (maxDistance) filter.distanceKm = { $lte: Number(maxDistance) };
-    if (freeOnly === 'true') filter.entranceFee = 0;
+    if (freeOnly === 'true') {
+      filter['fees.local'] = 0;
+      filter['fees.foreignAdult'] = 0;
+    }
     if (q) {
       const rx = new RegExp(escapeRegex(String(q)), 'i');
       filter.$or = [{ name: rx }, { categories: rx }];

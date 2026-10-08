@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { usePlan } from '../PlanContext.jsx';
 import { Photo } from '../components/PlaceCard.jsx';
-import { distLabel, feeLabel, formatMinutes, hoursLabel, statusOf } from '../utils.js';
+import { distLabel, feeLabel, formatMinutes, hoursLabel, closedLabel, statusOf } from '../utils.js';
 
 export default function PlaceDetail() {
   const { id } = useParams();
@@ -59,8 +59,23 @@ export default function PlaceDetail() {
       ))}
 
       <div className="facts">
-        <div><span>Opening hours</span><strong>{hoursLabel(place)}</strong></div>
-        <div><span>Entrance fee</span><strong>{feeLabel(place)}</strong></div>
+        <div>
+          <span>Opening hours</span>
+          <strong>{hoursLabel(place)}</strong>
+          {closedLabel(place) && <div className="small muted" style={{ marginTop: 4 }}>Closed: {closedLabel(place)}</div>}
+        </div>
+        <div>
+          <span>Entrance fee</span>
+          <strong>
+            {place.fees && (place.fees.foreignAdult > 0 || place.fees.local > 0) ? (
+              <>
+                Foreign Adult: LKR {place.fees.foreignAdult.toLocaleString()}<br/>
+                Foreign Child: LKR {place.fees.foreignChild.toLocaleString()}<br/>
+                Local: LKR {place.fees.local.toLocaleString()}
+              </>
+            ) : feeLabel(place)}
+          </strong>
+        </div>
         <div><span>Suggested visit</span><strong>{formatMinutes(place.visitDuration)}</strong></div>
         <div><span>Distance</span><strong>{distLabel(place.distanceKm)}</strong></div>
       </div>

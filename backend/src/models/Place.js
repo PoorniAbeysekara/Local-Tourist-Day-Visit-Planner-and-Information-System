@@ -33,8 +33,13 @@ const placeSchema = new Schema(
       lng: { type: Number, required: true, min: -180, max: 180 },
     },
     distanceKm: { type: Number, min: 0, default: 0 },
-    entranceFee: { type: Number, min: 0, default: 0 }, // LKR, 0 = free
+    fees: {
+      foreignAdult: { type: Number, min: 0, default: 0 },
+      foreignChild: { type: Number, min: 0, default: 0 },
+      local: { type: Number, min: 0, default: 0 }
+    },
     open24h: { type: Boolean, default: false },
+    closedOnPublicHolidays: { type: Boolean, default: false },
     openingHours: [hoursSchema],
     visitDuration: { type: Number, min: 5, default: 60 }, // minutes
     travelTips: { type: String, default: '' },

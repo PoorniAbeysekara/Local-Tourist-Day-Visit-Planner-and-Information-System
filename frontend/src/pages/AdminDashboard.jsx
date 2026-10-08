@@ -4,18 +4,24 @@ import { api, TOKEN_KEY } from '../api.js';
 import { feeLabel } from '../utils.js';
 
 const EMPTY = {
-  name: '', description: '', categories: [], lat: '', lng: '', distanceKm: '', entranceFee: 0,
-  open24h: false, openTime: '08:00', closeTime: '18:00', visitDuration: 60, travelTips: '',
+  name: '', description: '', categories: [], lat: '', lng: '', distanceKm: '', 
+  feeForeignAdult: 0, feeForeignChild: 0, feeLocal: 0,
+  open24h: false, openTime: '08:00', closeTime: '18:00', closedDays: [], closedOnPublicHolidays: false, visitDuration: 60, travelTips: '',
   parking: '', restrooms: '', food: '', phone: '', website: '', photoUrls: '',
   status: 'active', isTempClosed: false, noticeType: 'safety', noticeMessage: '',
 };
 
 function toForm(p) {
   const h = p.openingHours?.[0];
+  const allDays = [0, 1, 2, 3, 4, 5, 6];
+  const openDays = p.openingHours?.map(x => x.day) || [];
+  const closedDays = p.openingHours?.length ? allDays.filter(d => !openDays.includes(d)) : [];
   return {
     ...EMPTY, name: p.name, description: p.description, categories: p.categories,
-    lat: p.location.lat, lng: p.location.lng, distanceKm: p.distanceKm, entranceFee: p.entranceFee,
+    lat: p.location.lat, lng: p.location.lng, distanceKm: p.distanceKm, 
+    feeForeignAdult: p.fees?.foreignAdult || 0, feeForeignChild: p.fees?.foreignChild || 0, feeLocal: p.fees?.local || 0,
     open24h: p.open24h, openTime: h?.open || '08:00', closeTime: h?.close || '18:00',
+    closedDays, closedOnPublicHolidays: p.closedOnPublicHolidays || false,
     visitDuration: p.visitDuration, travelTips: p.travelTips,
     parking: p.facilities?.parking || '', restrooms: p.facilities?.restrooms || '', food: p.facilities?.food || '',
     phone: p.contact?.phone || '', website: p.contact?.website || '',
@@ -29,9 +35,15 @@ function toPayload(f) {
   return {
     name: f.name, description: f.description, categories: f.categories,
     location: { lat: Number(f.lat), lng: Number(f.lng) },
-    distanceKm: Number(f.distanceKm) || 0, entranceFee: Number(f.entranceFee) || 0,
+    distanceKm: Number(f.distanceKm) || 0, 
+    fees: {
+      foreignAdult: Number(f.feeForeignAdult) || 0,
+      foreignChild: Number(f.feeForeignChild) || 0,
+      local: Number(f.feeLocal) || 0,
+    },
     open24h: f.open24h,
-    openingHours: f.open24h ? [] : [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open: f.openTime, close: f.closeTime })),
+    closedOnPublicHolidays: f.closedOnPublicHolidays,
+    openingHours: f.open24h ? [] : [0, 1, 2, 3, 4, 5, 6].filter(d => !f.closedDays.includes(d)).map((day) => ({ day, open: f.openTime, close: f.closeTime })),
     visitDuration: Number(f.visitDuration) || 60, travelTips: f.travelTips,
     facilities: { parking: f.parking, restrooms: f.restrooms, food: f.food },
     contact: { phone: f.phone, website: f.website },
@@ -49,6 +61,8 @@ function PlaceForm({ initial, categories, onSave, onCancel }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const toggleCat = (slug) =>
     setF({ ...f, categories: f.categories.includes(slug) ? f.categories.filter((c) => c !== slug) : [...f.categories, slug] });
+  const toggleClosedDay = (idx) =>
+    setF({ ...f, closedDays: f.closedDays.includes(idx) ? f.closedDays.filter((d) => d !== idx) : [...f.closedDays, idx] });
 
   async function submit(e) {
     e.preventDefault();
@@ -106,20 +120,31 @@ function PlaceForm({ initial, categories, onSave, onCancel }) {
         <label>Latitude *<input type="number" step="any" value={f.lat} onChange={set('lat')} required /></label>
         <label>Longitude *<input type="number" step="any" value={f.lng} onChange={set('lng')} required /></label>
         <label>Distance (km)<input type="number" step="any" value={f.distanceKm} onChange={set('distanceKm')} /></label>
+        <label>Visit duration (min)<input type="number" min="5" value={f.visitDuration} onChange={set('visitDuration')} /></label>
       </div>
       <div className="row">
-        <label>Entrance fee (LKR, 0 = free)<input type="number" min="0" value={f.entranceFee} onChange={set('entranceFee')} /></label>
-        <label>Visit duration (min)<input type="number" min="5" value={f.visitDuration} onChange={set('visitDuration')} /></label>
+        <label>Foreign Adult Fee (LKR)<input type="number" min="0" value={f.feeForeignAdult} onChange={set('feeForeignAdult')} /></label>
+        <label>Foreign Child Fee (LKR)<input type="number" min="0" value={f.feeForeignChild} onChange={set('feeForeignChild')} /></label>
+        <label>Local Fee (LKR)<input type="number" min="0" value={f.feeLocal} onChange={set('feeLocal')} /></label>
       </div>
       <div className="row">
         <label className="inline"><input type="checkbox" checked={f.open24h} onChange={set('open24h')} /> Open 24 hours</label>
         {!f.open24h && (
           <>
-            <label>Opens (every day)<input type="time" value={f.openTime} onChange={set('openTime')} /></label>
+            <label>Opens<input type="time" value={f.openTime} onChange={set('openTime')} /></label>
             <label>Closes<input type="time" value={f.closeTime} onChange={set('closeTime')} /></label>
           </>
         )}
       </div>
+      {!f.open24h && (
+        <fieldset>
+          <legend>Closed Days</legend>
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+            <label key={i} className="inline"><input type="checkbox" checked={f.closedDays.includes(i)} onChange={() => toggleClosedDay(i)} /> {d}</label>
+          ))}
+          <label className="inline" style={{marginLeft: 16}}><input type="checkbox" checked={f.closedOnPublicHolidays} onChange={set('closedOnPublicHolidays')} /> Public Holidays</label>
+        </fieldset>
+      )}
       <label>Travel tips<textarea rows="2" value={f.travelTips} onChange={set('travelTips')} /></label>
       <div className="row">
         <label>Parking<input value={f.parking} onChange={set('parking')} /></label>
