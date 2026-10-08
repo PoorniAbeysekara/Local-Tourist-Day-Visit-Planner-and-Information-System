@@ -14,10 +14,12 @@ L.Marker.prototype.options.icon = L.icon({
 
 function Fit({ points }) {
   const map = useMap();
+  const dep = JSON.stringify(points);
   useEffect(() => {
-    if (points.length > 1) map.fitBounds(points, { padding: [40, 40] });
-    else if (points.length === 1) map.setView(points[0], 13);
-  }, [points, map]);
+    const pts = JSON.parse(dep);
+    if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40] });
+    else if (pts.length === 1) map.setView(pts[0], 13);
+  }, [dep, map]);
   return null;
 }
 
